@@ -128,6 +128,7 @@
                 throw new Error(`שגיאת מבנה ב-JSON: ${jsonErr.message}`);
             }
             
+            // מיון מהארוך לקצר כדי שביטויים מורכבים יסוננו לפני מילים בודדות
             blacklist.sort((a, b) => b.length - a.length);
             
             filterBtn.disabled = false;
@@ -144,6 +145,7 @@
         }
     }
 
+    // פונקציית חילוץ וסינון משופרת לעברית חופשית
     function filterText() {
         let text = document.getElementById('inputText').value;
         const outputText = document.getElementById('outputText');
@@ -156,8 +158,9 @@
             
             const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             
-            // Regex משופר: תומך ברצף של אותיות יחס בהתחלה (כמו ש-, שה-, ושה-)
-            const pattern = new RegExp('(?<=^|[\\s.,!?;"\'():\\]\\[\\-])([בוכלמנשה]*?)' + escapedWord + '(?=$|[\\s.,!?;"\'():\\]\\[\\-])', 'gi');
+            // לוגיקה חדשה: מאתרת את המילה עם כל שילוב של אותיות יחס בהתחלה (בוכלמנשיה)
+            // מבלי לדרוש רווח מוחלט לפניהן (פותר בעיות הדבקה ורצף מילים כמו "חי יהומו")
+            const pattern = new RegExp('([בוכלמנשיה]*?)' + escapedWord + '([וה]*?)(?=$|[\\s.,!?;"\'():\\]\\[\\-])', 'gi');
             
             text = text.replace(pattern, (match) => '*'.repeat(match.length));
         });
