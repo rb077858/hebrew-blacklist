@@ -96,18 +96,16 @@
     
     <div id="resultContainer" class="result-box">
         <div class="result-title">הטקסט המסונן:</div>
-        <div id="outputText"></div>
+        <div id="outputText" style="white-space: pre-wrap;"></div>
     </div>
 
     <div id="statusText" class="status">מתחבר ל-GitHub...</div>
 </div>
 
 <script>
-    // הכתובת המדויקת למאגר ה-GitHub שלך
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/rb077858/hebrew-blacklist/main/badwords.json";
     let blacklist = [];
 
-    // פונקציה למשיכת המילים מהמאגר בזמן טעינת העמוד
     async function loadBlacklist() {
         const filterBtn = document.getElementById('filterBtn');
         const statusText = document.getElementById('statusText');
@@ -118,45 +116,47 @@
             
             blacklist = await response.json();
             
-            // הפעלת הכפתור לאחר שהמאגר נטען בהצלחה
+            // מיון מהארוך לקצר כדי למנוע מצב שמילה קצרה תסונן בתוך ביטוי ארוך יותר
+            blacklist.sort((a, b) => b.length - a.length);
+            
             filterBtn.disabled = false;
             filterBtn.innerText = "סנן טקסט";
             statusText.innerText = `המאגר נטען בהצלחה! (${blacklist.length} מילים)`;
             statusText.style.color = "#27ae60";
         } catch (error) {
             console.error(error);
-            statusText.innerText = "שגיאה בטעינת המאגר מ-GitHub. ודא שהקובץ קיים במאגר.";
+            statusText.innerText = "שגיאה בטעינת המאגר. ודא שהקובץ קיים והמאגר ציבורי (Public).";
             statusText.style.color = "#c0392b";
             filterBtn.innerText = "שגיאה בטעינה";
         }
     }
 
-    // פונקציית הסינון שמורצת בלחיצה על הכפתור
     function filterText() {
-        const inputText = document.getElementById('inputText').value;
+        let text = document.getElementById('inputText').value;
         const outputText = document.getElementById('outputText');
         const resultContainer = document.getElementById('resultContainer');
 
-        if (!inputText.trim()) return;
-        if (blacklist.length === 0) return;
+        if (!text.trim() || blacklist.length === 0) return;
 
-        // יצירת Regex שמחפש את כל המילים מהמאגר ומחליף אותן בכוכביות
-        // משתמשים ב- escape כדי למנוע תקלות תווים מיוחדים
-        const escapedWords = blacklist.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-        const pattern = new RegExp('\\b(' + escapedWords.join('|') + ')\\b', 'gi');
+        // רשימת המילים הללו תעבור החלפה מדויקת התואמת לשפה העברית
+        blacklist.forEach(word => {
+            if (!word.trim()) return;
+            
+            // מילוט תווים מיוחדים אם קיימים במילה
+            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            
+            // בניית Regex שמתאים לעברית: תופס את המילה כשהיא מוקפת ברווחים, סימני פיסוק, או תחילת/סוף שורה
+            const pattern = new RegExp('(?<=^|[\\s.,!?;"\'():\\]\\[\\-])' + escapedWord + '(?=$|[\\s.,!?;"\'():\\]\\[\\-])', 'gi');
+            
+            // ביצוע ההחלפה בכוכביות
+            text = text.replace(pattern, (match) => '*'.repeat(match.length));
+        });
 
-        // החלפה דינמית של המילה בכוכביות לפי האורך שלה
-        const cleanText = inputText.replace(pattern, (match) => '*'.repeat(match.length));
-
-        // הצגת התוצאה על המסך
-        outputText.innerText = cleanText;
+        outputText.innerText = text;
         resultContainer.style.display = "block";
     }
 
-    // מאזין ללחיצה על כפתור הסינון
     document.getElementById('filterBtn').addEventListener('click', filterText);
-
-    // טעינת המאגר מיד כשהעמוד עולה
     window.addEventListener('DOMContentLoaded', loadBlacklist);
 </script>
 
