@@ -103,25 +103,32 @@
 </div>
 
 <script>
-    // פרטי המאגר שלך בגיטהאב
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/rb077858/hebrew-blacklist/main/badwords.json";
     let blacklist = [];
 
-    // פונקציה למשיכת המילים מהמאגר בזמן טעינת העמוד
+    // פונקציה למשיכת המילים מהמאגר עם ביטול אגרסיבי של ה-Cache
     async function loadBlacklist() {
         const filterBtn = document.getElementById('filterBtn');
         const statusText = document.getElementById('statusText');
 
         try {
-            // ביטול ה-Cache של הדפדפן באמצעות הוספת Timestamp ייחודי לכל טעינה
+            // 1. הוספת פרמטר זמן ייחודי ל-URL (ביטול Cache בדפדפן)
             const cacheBusterUrl = `${GITHUB_RAW_URL}?t=${new Date().getTime()}`;
             
-            const response = await fetch(cacheBusterUrl);
+            // 2. שימוש ב-Headers ובמאפייני fetch כדי להכריח את השרת של גיטהאב לעקוף את ה-CDN שלו
+            const response = await fetch(cacheBusterUrl, {
+                cache: "no-store", // מונע מהדפדפן לשמור או לקרוא מה-Cache שלו
+                headers: {
+                    'Cache-Control': 'no-cache', // מבקש מהשרת של גיטהאב לא להביא גרסה שמורה
+                    'Pragma': 'no-cache'
+                }
+            });
+            
             if (!response.ok) throw new Error("שגיאה בטעינת הקובץ");
             
             blacklist = await response.json();
             
-            // מיון מהארוך לקצר כדי למנוע באגים של חיתוך חלקי בתוך ביטויים
+            // מיון מהארוך לקצר
             blacklist.sort((a, b) => b.length - a.length);
             
             // הפעלת הכפתור ועדכון הסטטוס
@@ -131,7 +138,7 @@
             statusText.style.color = "#27ae60";
         } catch (error) {
             console.error(error);
-            statusText.innerText = "שגיאה בטעינת המאגר. ודא שהקובץ badwords.json קיים והמאגר ציבורי (Public).";
+            statusText.innerText = "שגיאה בטעינת המאגר. ודא שקובץ ה-JSON תקין מבחינת סינטקס בגיטהאב.";
             statusText.style.color = "#c0392b";
             filterBtn.innerText = "שגיאה בטעינה";
         }
@@ -145,26 +152,19 @@
 
         if (!text.trim() || blacklist.length === 0) return;
 
-        // ריצה על כל המילים במאגר וביצוע החלפה התואמת לשפה העברית
         blacklist.forEach(word => {
             if (!word.trim()) return;
             
-            // מילוט תווים מיוחדים ל-Regex במידה ויש
             const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            
-            // תבנית המזהה את המילה כשהיא מוקפת ברווחים, סימני פיסוק, או קצוות משפט (במקום \b שלא עובד בעברית)
             const pattern = new RegExp('(?<=^|[\\s.,!?;"\'():\\]\\[\\-])' + escapedWord + '(?=$|[\\s.,!?;"\'():\\]\\[\\-])', 'gi');
             
-            // החלפת המילה בכוכביות לפי אורך התווים שלה
             text = text.replace(pattern, (match) => '*'.repeat(match.length));
         });
 
-        // הצגת התוצאה
         outputText.innerText = text;
         resultContainer.style.display = "block";
     }
 
-    // מאזינים לאירועים
     document.getElementById('filterBtn').addEventListener('click', filterText);
     window.addEventListener('DOMContentLoaded', loadBlacklist);
 </script>
