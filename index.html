@@ -103,34 +103,41 @@
 </div>
 
 <script>
+    // פרטי המאגר שלך בגיטהאב
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/rb077858/hebrew-blacklist/main/badwords.json";
     let blacklist = [];
 
+    // פונקציה למשיכת המילים מהמאגר בזמן טעינת העמוד
     async function loadBlacklist() {
         const filterBtn = document.getElementById('filterBtn');
         const statusText = document.getElementById('statusText');
 
         try {
-            const response = await fetch(GITHUB_RAW_URL);
+            // ביטול ה-Cache של הדפדפן באמצעות הוספת Timestamp ייחודי לכל טעינה
+            const cacheBusterUrl = `${GITHUB_RAW_URL}?t=${new Date().getTime()}`;
+            
+            const response = await fetch(cacheBusterUrl);
             if (!response.ok) throw new Error("שגיאה בטעינת הקובץ");
             
             blacklist = await response.json();
             
-            // מיון מהארוך לקצר כדי למנוע מצב שמילה קצרה תסונן בתוך ביטוי ארוך יותר
+            // מיון מהארוך לקצר כדי למנוע באגים של חיתוך חלקי בתוך ביטויים
             blacklist.sort((a, b) => b.length - a.length);
             
+            // הפעלת הכפתור ועדכון הסטטוס
             filterBtn.disabled = false;
             filterBtn.innerText = "סנן טקסט";
             statusText.innerText = `המאגר נטען בהצלחה! (${blacklist.length} מילים)`;
             statusText.style.color = "#27ae60";
         } catch (error) {
             console.error(error);
-            statusText.innerText = "שגיאה בטעינת המאגר. ודא שהקובץ קיים והמאגר ציבורי (Public).";
+            statusText.innerText = "שגיאה בטעינת המאגר. ודא שהקובץ badwords.json קיים והמאגר ציבורי (Public).";
             statusText.style.color = "#c0392b";
             filterBtn.innerText = "שגיאה בטעינה";
         }
     }
 
+    // פונקציית הסינון שמורצת בלחיצה על הכפתור
     function filterText() {
         let text = document.getElementById('inputText').value;
         const outputText = document.getElementById('outputText');
@@ -138,24 +145,26 @@
 
         if (!text.trim() || blacklist.length === 0) return;
 
-        // רשימת המילים הללו תעבור החלפה מדויקת התואמת לשפה העברית
+        // ריצה על כל המילים במאגר וביצוע החלפה התואמת לשפה העברית
         blacklist.forEach(word => {
             if (!word.trim()) return;
             
-            // מילוט תווים מיוחדים אם קיימים במילה
+            // מילוט תווים מיוחדים ל-Regex במידה ויש
             const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             
-            // בניית Regex שמתאים לעברית: תופס את המילה כשהיא מוקפת ברווחים, סימני פיסוק, או תחילת/סוף שורה
+            // תבנית המזהה את המילה כשהיא מוקפת ברווחים, סימני פיסוק, או קצוות משפט (במקום \b שלא עובד בעברית)
             const pattern = new RegExp('(?<=^|[\\s.,!?;"\'():\\]\\[\\-])' + escapedWord + '(?=$|[\\s.,!?;"\'():\\]\\[\\-])', 'gi');
             
-            // ביצוע ההחלפה בכוכביות
+            // החלפת המילה בכוכביות לפי אורך התווים שלה
             text = text.replace(pattern, (match) => '*'.repeat(match.length));
         });
 
+        // הצגת התוצאה
         outputText.innerText = text;
         resultContainer.style.display = "block";
     }
 
+    // מאזינים לאירועים
     document.getElementById('filterBtn').addEventListener('click', filterText);
     window.addEventListener('DOMContentLoaded', loadBlacklist);
 </script>
