@@ -7,9 +7,7 @@
 במקום להוריד את הקובץ, אתם יכולים לשלוח בקשת `GET` ישירות לקישור ה-Raw של גיטהאב ולקבל תמיד את הרשימה המעודכנת ביותר בפורמט JSON.
 
 **כתובת ה-API שלכם:**
-`https://raw.githubusercontent.com/YOUR_USERNAME/YOUR_REPO_NAME/main/badwords.json`
-
-*(אל תשכחו להחליף את `YOUR_USERNAME` ו-`YOUR_REPO_NAME` בפרטים שלכם).*
+`https://raw.githubusercontent.com/rb077858/hebrew-blacklist/main/badwords.json`
 
 ## תרומה למאגר (Contributing)
 מצאתם מילה חסרה? רוצים לשפר את הסינון? נשמח אם תפתחו Pull Request או תפתחו Issue.
