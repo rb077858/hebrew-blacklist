@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מסנן קללות בעברית</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: none;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            border-color: #3498db;
+        }
+        button {
+            width: 100%;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-right: 4px solid #2ecc71;
+            border-radius: 4px;
+            display: none;
+        }
+        .result-title {
+            font-weight: bold;
+            color: #27ae60;
+            margin-bottom: 5px;
+        }
+        .status {
+            font-size: 12px;
+            text-align: center;
+            color: #7f8c8d;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>מסנן טקסט בעברית 🤬 ✨</h1>
+    
+    <textarea id="inputText" placeholder="הקלד או הדבק כאן את הטקסט לסינון..."></textarea>
+    <button id="filterBtn" disabled>טוען מאגר מילים...</button>
+    
+    <div id="resultContainer" class="result-box">
+        <div class="result-title">הטקסט המסונן:</div>
+        <div id="outputText"></div>
+    </div>
+
+    <div id="statusText" class="status">מתחבר ל-GitHub...</div>
+</div>
+
+<script>
+    // הכתובת המדויקת למאגר ה-GitHub שלך
+    const GITHUB_RAW_URL = "https://raw.githubusercontent.com/rb077858/hebrew-blacklist/main/badwords.json";
+    let blacklist = [];
+
+    // פונקציה למשיכת המילים מהמאגר בזמן טעינת העמוד
+    async function loadBlacklist() {
+        const filterBtn = document.getElementById('filterBtn');
+        const statusText = document.getElementById('statusText');
+
+        try {
+            const response = await fetch(GITHUB_RAW_URL);
+            if (!response.ok) throw new Error("שגיאה בטעינת הקובץ");
+            
+            blacklist = await response.json();
+            
+            // הפעלת הכפתור לאחר שהמאגר נטען בהצלחה
+            filterBtn.disabled = false;
+            filterBtn.innerText = "סנן טקסט";
+            statusText.innerText = `המאגר נטען בהצלחה! (${blacklist.length} מילים)`;
+            statusText.style.color = "#27ae60";
+        } catch (error) {
+            console.error(error);
+            statusText.innerText = "שגיאה בטעינת המאגר מ-GitHub. ודא שהקובץ קיים במאגר.";
+            statusText.style.color = "#c0392b";
+            filterBtn.innerText = "שגיאה בטעינה";
+        }
+    }
+
+    // פונקציית הסינון שמורצת בלחיצה על הכפתור
+    function filterText() {
+        const inputText = document.getElementById('inputText').value;
+        const outputText = document.getElementById('outputText');
+        const resultContainer = document.getElementById('resultContainer');
+
+        if (!inputText.trim()) return;
+        if (blacklist.length === 0) return;
+
+        // יצירת Regex שמחפש את כל המילים מהמאגר ומחליף אותן בכוכביות
+        // משתמשים ב- escape כדי למנוע תקלות תווים מיוחדים
+        const escapedWords = blacklist.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+        const pattern = new RegExp('\\b(' + escapedWords.join('|') + ')\\b', 'gi');
+
+        // החלפה דינמית של המילה בכוכביות לפי האורך שלה
+        const cleanText = inputText.replace(pattern, (match) => '*'.repeat(match.length));
+
+        // הצגת התוצאה על המסך
+        outputText.innerText = cleanText;
+        resultContainer.style.display = "block";
+    }
+
+    // מאזין ללחיצה על כפתור הסינון
+    document.getElementById('filterBtn').addEventListener('click', filterText);
+
+    // טעינת המאגר מיד כשהעמוד עולה
+    window.addEventListener('DOMContentLoaded', loadBlacklist);
+</script>
+
+</body>
+</html>
