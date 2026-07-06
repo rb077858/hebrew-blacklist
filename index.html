@@ -107,41 +107,35 @@
 </div>
 
 <script>
-    // הכתובת למאגר ה-GitHub שלך
     const GITHUB_RAW_URL = "https://raw.githubusercontent.com/rb077858/hebrew-blacklist/main/badwords.json";
     let blacklist = [];
 
-    // פונקציה למשיכת המילים מהמאגר עם ביטול Cache בטוח ללא בעיות CORS
     async function loadBlacklist() {
         const filterBtn = document.getElementById('filterBtn');
         const statusText = document.getElementById('statusText');
 
         try {
-            // הוספת מזהה זמן ייחודי ל-URL כדי להכריח את הדפדפן להביא קובץ טרי
             const cacheBusterUrl = `${GITHUB_RAW_URL}?t=${new Date().getTime()}`;
             
-            // שליחת בקשה נקייה ללא Custom Headers כדי למנוע חסימת CORS
             const response = await fetch(cacheBusterUrl, {
                 mode: 'cors'
             });
             
             if (!response.ok) {
-                throw new Error(`שרת גיטהאב החזיר שגיאה קוד ${response.status}. ודא שהמאגר Public וששם הקובץ נכון.`);
+                throw new Error(`שרת גיטהאב החזיר שגיאה קוד ${response.status}.`);
             }
             
             const textData = await response.text();
             
-            // פענוח ה-JSON ובדיקת תקינותו
             try {
                 blacklist = JSON.parse(textData);
             } catch (jsonErr) {
                 throw new Error(`שגיאת מבנה (Syntax) בתוך קובץ ה-JSON בגיטהאב: ${jsonErr.message}`);
             }
             
-            // מיון מהארוך לקצר כדי למנוע חיתוך מילים חלקי בביטויים מורכבים
+            // מיון מהארוך לקצר
             blacklist.sort((a, b) => b.length - a.length);
             
-            // הפעלת ממשק המשתמש
             filterBtn.disabled = false;
             filterBtn.innerText = "סנן טקסט";
             statusText.innerText = `המאגר נטען בהצלחה! (${blacklist.length} מילים)`;
@@ -156,7 +150,6 @@
         }
     }
 
-    // פונקציית הסינון
     function filterText() {
         let text = document.getElementById('inputText').value;
         const outputText = document.getElementById('outputText');
@@ -164,26 +157,23 @@
 
         if (!text.trim() || blacklist.length === 0) return;
 
-        // ריצה על כל המילים במערך וביצוע החלפה מותאמת עברית
         blacklist.forEach(word => {
             if (!word.trim()) return;
             
-            // מילוט תווים מיוחדים ל-Regex במידה וקיימים
             const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             
-            // תבנית שמחפשת את המילה כשהיא מוקפת ברווחים, סימני פיסוק, או קצוות משפט
-            const pattern = new RegExp('(?<=^|[\\s.,!?;"\'():\\]\\[\\-])' + escapedWord + '(?=$|[\\s.,!?;"\'():\\]\\[\\-])', 'gi');
+            // Regex משופר לעברית: תופס את המילה גם אם יש לפניה אותיות שימוש (ב, ו, כ, ל, מ, נ, ש, ה) 
+            // ומבטיח שהיא מוגדרת כחלק עצמאי במשפט ולא נבלעת בתוך מילה תמימה אחרת
+            const pattern = new RegExp('(?<=^|[\\s.,!?;"\'():\\]\\[\\-])([בוכלמנשה]?)' + escapedWord + '(?=$|[\\s.,!?;"\'():\\]\\[\\-])', 'gi');
             
-            // החלפה דינמית לכוכביות לפי אורך התווים של המילה שנמצאה
+            // החלפה דינמית של המילה (כולל אות השימוש שנדבקה אליה) בכוכביות
             text = text.replace(pattern, (match) => '*'.repeat(match.length));
         });
 
-        // עדכון התצוגה
         outputText.innerText = text;
         resultContainer.style.display = "block";
     }
 
-    // רישום מאזינים לאירועים
     document.getElementById('filterBtn').addEventListener('click', filterText);
     window.addEventListener('DOMContentLoaded', loadBlacklist);
 </script>
