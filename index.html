@@ -116,24 +116,18 @@
 
         try {
             const cacheBusterUrl = `${GITHUB_RAW_URL}?t=${new Date().getTime()}`;
+            const response = await fetch(cacheBusterUrl, { mode: 'cors' });
             
-            const response = await fetch(cacheBusterUrl, {
-                mode: 'cors'
-            });
-            
-            if (!response.ok) {
-                throw new Error(`שרת גיטהאב החזיר שגיאה קוד ${response.status}.`);
-            }
+            if (!response.ok) throw new Error(`שרת גיטהאב החזיר שגיאה קוד ${response.status}.`);
             
             const textData = await response.text();
             
             try {
                 blacklist = JSON.parse(textData);
             } catch (jsonErr) {
-                throw new Error(`שגיאת מבנה (Syntax) בתוך קובץ ה-JSON בגיטהאב: ${jsonErr.message}`);
+                throw new Error(`שגיאת מבנה ב-JSON: ${jsonErr.message}`);
             }
             
-            // מיון מהארוך לקצר
             blacklist.sort((a, b) => b.length - a.length);
             
             filterBtn.disabled = false;
@@ -162,11 +156,9 @@
             
             const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             
-            // Regex משופר לעברית: תופס את המילה גם אם יש לפניה אותיות שימוש (ב, ו, כ, ל, מ, נ, ש, ה) 
-            // ומבטיח שהיא מוגדרת כחלק עצמאי במשפט ולא נבלעת בתוך מילה תמימה אחרת
-            const pattern = new RegExp('(?<=^|[\\s.,!?;"\'():\\]\\[\\-])([בוכלמנשה]?)' + escapedWord + '(?=$|[\\s.,!?;"\'():\\]\\[\\-])', 'gi');
+            // Regex משופר: תומך ברצף של אותיות יחס בהתחלה (כמו ש-, שה-, ושה-)
+            const pattern = new RegExp('(?<=^|[\\s.,!?;"\'():\\]\\[\\-])([בוכלמנשה]*?)' + escapedWord + '(?=$|[\\s.,!?;"\'():\\]\\[\\-])', 'gi');
             
-            // החלפה דינמית של המילה (כולל אות השימוש שנדבקה אליה) בכוכביות
             text = text.replace(pattern, (match) => '*'.repeat(match.length));
         });
 
